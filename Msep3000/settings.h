@@ -19,3 +19,5 @@
 #define D_ACID 10
 #define D_SALINE 10
 #define D_TIME 10
+
+#define NUM_CYCLES 2

@@ -6,7 +6,8 @@
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 
 int lcd_key     = 0;
-int cycle[25];
+
+int cycle[NUM_CYCLES * 5];
 
 
 void setup()
@@ -16,5 +17,13 @@ void setup()
  
 void loop()
 {
- cycle_set(); 
+    bool prompt = false;
+    while (!prompt){
+      cycle_set(cycle);
+      prompt = prompt_ok();
+      delay(200);
+    }
+    lcd.clear();
+    lcd.print("iniciando");
+    delay(2000); 
 }
