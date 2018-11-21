@@ -9,7 +9,7 @@ void set_init_parm(char cycle_item[10], int j, char unit_name[3], int old)
 {
   lcd.clear();
   lcd.print(cycle_item);
-  lcd.print(j + 1); //TODO: CONSERTAR CHAR DISPLAY
+  lcd.print(j + 1); 
   lcd.setCursor(0, 1);
   lcd.print(old);
   printUnit(unit_name);
@@ -47,6 +47,17 @@ bool prompt_ok() {
   int b = btn_dir_ctrl();
   if (b == 1) return true;
   else return false;
+}
+
+void display_status(char msg[16], int i){
+    lcd.clear();
+    lcd.print(msg);
+    lcd.setCursor(3,1);
+    lcd.print('%');
+    lcd.setCursor(13,1);
+    lcd.print(i+1);
+    lcd.print('/');
+    lcd.print(NUM_CYCLES);
 }
 
 int qnt_ctrl(int D, int MAX, int MIN, int old)
@@ -89,4 +100,24 @@ void cycle_set(int *c)
     delay(50);
   }
 
+}
+
+void add_liquid(int L, int i, int qty){
+    if (L==1){
+      display_status("Adc. agua      ", i);
+    }
+    else if (L==2){
+      display_status("Adc. sol. acida", i);
+    }
+    else if (L==3){
+      display_status("Adc. sol salina", i);
+    }
+
+    delay(100);
+
+    for(int j=0; j<100; j++){
+      delay(qty); //abstract
+      clearLine();
+      lcd.print(j);
+    }
 }

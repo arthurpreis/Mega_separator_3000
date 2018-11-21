@@ -24,6 +24,19 @@ void loop()
       delay(200);
     }
     lcd.clear();
-    lcd.print("iniciando");
-    delay(2000); 
+    lcd.print("Iniciando");
+    delay(2000);
+
+    for (int i=0; i<NUM_CYCLES; i++){
+      int j = 5 * i;
+      add_liquid(1, i, cycle[j + 0]);
+      add_liquid(2, i, cycle[j + 1]);
+      add_liquid(3, i, cycle[j + 2]);
+      //mix( i, cycle[j + 3]);
+      //rest(i, cycle[j + 4]);
+      //empty(i);
+    }
+    lcd.clear();
+    lcd.print("ENCERRADO");
+    delay(10000);
 }
