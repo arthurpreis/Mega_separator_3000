@@ -27,6 +27,7 @@ void clearLine(){
   lcd.setCursor(0,1);
 }
 
+
 void printUnit(char s[2]){
   lcd.setCursor(3,1);
   lcd.print(s);

@@ -5,7 +5,18 @@
 
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 
+
+byte sensorInterrupt = 0;  // 0 = digital pin 2
+byte sensorPin       = 2;
+
+float calibrationFactor = 8.7;
+float flowRate;
+unsigned int flowMilliLitres;
+unsigned long totalMilliLitres;
+unsigned long oldTime;
+
 int lcd_key     = 0;
+
 
 int cycle[NUM_CYCLES * 5];
 
@@ -13,6 +24,23 @@ int cycle[NUM_CYCLES * 5];
 void setup()
 {
  lcd.begin(16, 2);              // start the library
+ pinMode(WATER_VALVE, OUTPUT);    
+ pinMode(PUMP_1, OUTPUT);    
+ pinMode(PUMP_2, OUTPUT);    
+ 
+ digitalWrite(WATER_VALVE, HIGH);
+ digitalWrite(PUMP_1, HIGH);
+ digitalWrite(PUMP_2, HIGH);
+
+ pinMode(sensorPin, INPUT);
+ digitalWrite(sensorPin, HIGH);
+
+  pulseCount        = 0;
+  flowRate          = 0.0;
+  flowMilliLitres   = 0;
+  totalMilliLitres  = 0;
+  oldTime           = 0;
+  attachInterrupt(sensorInterrupt, pulseCounter, FALLING);
 }
  
 void loop()
