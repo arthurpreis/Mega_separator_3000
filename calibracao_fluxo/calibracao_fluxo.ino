@@ -5,7 +5,7 @@
 #define btnLEFT   3
 #define btnSELECT 4
 #define btnNONE   5
-#define water_valve 2
+#define water_valve A4
 
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 byte statusLed    = 13;

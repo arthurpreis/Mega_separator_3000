@@ -16,13 +16,13 @@
 #define MIN_TIME 0
 
 #define D_WATER 1
-#define D_ACID 10
-#define D_SALINE 10
-#define D_TIME 10
+#define D_ACID 1
+#define D_SALINE 1
+#define D_TIME 1
 
 #define NUM_CYCLES 1
 
 #define WATER_VALVE A4 
 #define PUMP_1 A3
-#define PUMP_2 A2
-#define MOTOR A1
+#define PUMP_2 A1
+#define MOTOR 3

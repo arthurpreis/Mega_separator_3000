@@ -8,6 +8,8 @@ volatile byte pulseCount;
 
 extern float calibrationFactor;
 extern float flowRate;
+extern float cal_pump1;
+extern float cal_pump2;
 extern unsigned int flowMilliLitres;
 extern unsigned long totalMilliLitres;
 extern unsigned long oldTime;
@@ -70,7 +72,7 @@ void display_status(char msg[16], int i){
     lcd.clear();
     lcd.print(msg);
     lcd.setCursor(3,1);
-    lcd.print('%');
+    //lcd.print('%');
     lcd.setCursor(13,1);
     lcd.print(i+1);
     lcd.print('/');
@@ -112,7 +114,7 @@ void cycle_set(int *c)
     c[j + 0] = set_cycle_qnt("Qte agua "      , i, "L  ", D_WATER  , MAX_WATER  , MIN_WATER , c[j + 0]);
     c[j + 1] = set_cycle_qnt("Qte sol.acida " , i, "mL ", D_ACID   , MAX_ACID   , MIN_ACID  , c[j + 1]);
     c[j + 2] = set_cycle_qnt("Qte sol.salina ", i, "mL ", D_SALINE , MAX_SALINE , MIN_SALINE, c[j + 2]);
-   // c[j + 3] = set_cycle_qnt("Tempo mix "     , i, "min", D_TIME   , MAX_TIME   , MIN_TIME  , c[j + 3]);
+    c[j + 3] = set_cycle_qnt("Tempo mix "     , i, "min", D_TIME   , MAX_TIME   , MIN_TIME  , c[j + 3]);
    // c[j + 4] = set_cycle_qnt("Tempo hold "    , i, "min", D_TIME   , MAX_TIME   , MIN_TIME  , c[j + 4]);
     delay(50);
   }
@@ -147,10 +149,7 @@ void measure_water(int max_amt){
         flowMilliLitres = (flowRate / 60) * 1000;
     
         // Add the millilitres passed in this second to the cumulative total
-        totalMilliLitres += flowMilliLitres;
-      
-        unsigned int frac;
-    
+        totalMilliLitres += flowMilliLitres; 
         // Print the flow rate for this second in litres / minute
     
         // Print the cumulative total of litres flowed since starting
@@ -158,13 +157,42 @@ void measure_water(int max_amt){
         lcd.setCursor(0,1);
         lcd.print(totalMilliLitres);
         lcd.println("mL"); 
+            // Reset the pulse counter so we can start incrementing again
+        pulseCount = 0;
+    
+    // Enable the interrupt again now that we've finished sending output
+        attachInterrupt(sensorInterrupt, pulseCounter, FALLING);
     }
   }
 }
 
 
+void mix(int i, int t){
+   display_status("Misturando      ", i);
+   digitalWrite(MOTOR, HIGH);
+   int wait_time = t*60; //em segundos
+   for(int n = 0; n<wait_time; n++){
+    clearLine();
+    lcd.print(n);
+    delay(1000);
+   }
+   digitalWrite(MOTOR, LOW);
+}
+
 void add_liquid(int L, int i, int qty){
+
+
+  
     if (L==1){
+  
+         pulseCount        = 0;
+          flowRate          = 0.0;
+          flowMilliLitres   = 0;
+          totalMilliLitres  = 0;
+          oldTime           = 0;
+          attachInterrupt(sensorInterrupt, pulseCounter, FALLING);
+      
+      
       display_status("Adc. agua      ", i);
        digitalWrite(WATER_VALVE, LOW);
        digitalWrite(PUMP_1, HIGH);
@@ -178,9 +206,37 @@ void add_liquid(int L, int i, int qty){
     }
     else if (L==2){
       display_status("Adc. sol. acida", i);
+       digitalWrite(WATER_VALVE, HIGH);
+       digitalWrite(PUMP_1, LOW);
+       digitalWrite(PUMP_2, HIGH);
+
+       int wait_time = qty/cal_pump1;
+       for(int n = 0; n<wait_time; n++){
+        clearLine();
+        lcd.print(cal_pump1*n);
+        delay(1000);
+       }
+  
+       digitalWrite(WATER_VALVE, HIGH);
+       digitalWrite(PUMP_1, HIGH);
+       digitalWrite(PUMP_2, HIGH);
     }
     else if (L==3){
       display_status("Adc. sol salina", i);
+      digitalWrite(WATER_VALVE, HIGH);
+      digitalWrite(PUMP_1, HIGH);
+      digitalWrite(PUMP_2, LOW);
+      int wait_time = qty/cal_pump2;
+       for(int n = 0; n<wait_time; n++){
+        clearLine();
+        lcd.print(cal_pump2*n);
+        delay(1000);
+       }
+  
+
+      digitalWrite(WATER_VALVE, HIGH);
+      digitalWrite(PUMP_1, HIGH);
+      digitalWrite(PUMP_2, HIGH);
     }
 
     delay(100);
