@@ -1,22 +1,45 @@
 #include <LiquidCrystal.h>
 #include "functions.h"
 
+// =================== condutivimetro ============================
+extern float CalibrationEC; //EC value of Calibration solution is s/cm
+extern int R1;
+extern int Ra; //Resistance of powering Pins
+extern int ECPin;
+extern int ECGround;
+extern int ECPower;
+extern float EC;
+extern int ppm;
+extern float raw;
+extern float Vin;
+extern float Vdrop;
+extern float Rc;
+extern float K;
+extern float buffer;
 
+// ================= LCD + Keypad ================================
 extern LiquidCrystal lcd;
 extern int lcd_key;
-volatile byte pulseCount;
 
+// ================ Fluxometro ===================================
+extern byte sensorInterrupt;
+extern byte sensorPin;
+
+extern volatile byte pulseCount;
 extern float calibrationFactor;
 extern float flowRate;
-extern float cal_pump1;
-extern float cal_pump2;
+
 extern unsigned int flowMilliLitres;
 extern unsigned long totalMilliLitres;
 extern unsigned long oldTime;
+// ===================== Bombas ==================================
+extern float cal_pump1;
+extern float cal_pump2;
 
-extern byte sensorInterrupt;
-extern byte sensorPin;
-  
+// ===================== Valvulas ================================
+// ===================== Ciclos ==================================
+
+
 void pulseCounter()
 {
   // Increment the pulse counter
@@ -72,7 +95,6 @@ void display_status(char msg[16], int i){
     lcd.clear();
     lcd.print(msg);
     lcd.setCursor(3,1);
-    //lcd.print('%');
     lcd.setCursor(13,1);
     lcd.print(i+1);
     lcd.print('/');
@@ -112,10 +134,10 @@ void cycle_set(int *c)
   for (int i = 0; i < NUM_CYCLES; i++) {
     int j = 5 * i;
     c[j + 0] = set_cycle_qnt("Qte agua "      , i, "L  ", D_WATER  , MAX_WATER  , MIN_WATER , c[j + 0]);
-    c[j + 1] = set_cycle_qnt("Qte sol.acida " , i, "mL ", D_ACID   , MAX_ACID   , MIN_ACID  , c[j + 1]);
-    c[j + 2] = set_cycle_qnt("Qte sol.salina ", i, "mL ", D_SALINE , MAX_SALINE , MIN_SALINE, c[j + 2]);
+    c[j + 1] = set_cycle_qnt("Qte sol. 1 "    , i, "mL ", D_SOL    , MAX_SOL    , MIN_SOL   , c[j + 1]);
+    c[j + 2] = set_cycle_qnt("Qte sol. 2 "    , i, "mL ", D_SOL    , MAX_SOL    , MIN_SOL   , c[j + 2]);;
     c[j + 3] = set_cycle_qnt("Tempo mix "     , i, "min", D_TIME   , MAX_TIME   , MIN_TIME  , c[j + 3]);
-   // c[j + 4] = set_cycle_qnt("Tempo hold "    , i, "min", D_TIME   , MAX_TIME   , MIN_TIME  , c[j + 4]);
+    c[j + 4] = set_cycle_qnt("Tempo rest "    , i, "min", D_TIME   , MAX_TIME   , MIN_TIME  , c[j + 4]);
     delay(50);
   }
 
@@ -126,41 +148,18 @@ void measure_water(int max_amt){
   
     if((millis() - oldTime) > 1000)    // Only process counters once per second
       { 
-        // Disable the interrupt while calculating flow rate and sending the value to
-        // the host
-        detachInterrupt(sensorInterrupt);
         
-        // Because this loop may not complete in exactly 1 second intervals we calculate
-        // the number of milliseconds that have passed since the last execution and use
-        // that to scale the output. We also apply the calibrationFactor to scale the output
-        // based on the number of pulses per second per units of measure (litres/minute in
-        // this case) coming from the sensor.
+        detachInterrupt(sensorInterrupt);
         flowRate = ((1000.0 / (millis() - oldTime)) * pulseCount) / calibrationFactor;
-    
-        // Note the time this processing pass was executed. Note that because we've
-        // disabled interrupts the millis() function won't actually be incrementing right
-        // at this point, but it will still return the value it was set to just before
-        // interrupts went away.
         oldTime = millis();
-    
-        // Divide the flow rate in litres/minute by 60 to determine how many litres have
-        // passed through the sensor in this 1 second interval, then multiply by 1000 to
-        // convert to millilitres.
         flowMilliLitres = (flowRate / 60) * 1000;
-    
-        // Add the millilitres passed in this second to the cumulative total
         totalMilliLitres += flowMilliLitres; 
-        // Print the flow rate for this second in litres / minute
-    
-        // Print the cumulative total of litres flowed since starting
-    
+       
         lcd.setCursor(0,1);
-        lcd.print(totalMilliLitres);
-        lcd.println("mL"); 
-            // Reset the pulse counter so we can start incrementing again
+        lcd.print(totalMilliLitres/1000);
+        lcd.println("L"); 
+        
         pulseCount = 0;
-    
-    // Enable the interrupt again now that we've finished sending output
         attachInterrupt(sensorInterrupt, pulseCounter, FALLING);
     }
   }
@@ -172,74 +171,96 @@ void mix(int i, int t){
    digitalWrite(MOTOR, HIGH);
    int wait_time = t*60; //em segundos
    for(int n = 0; n<wait_time; n++){
-    clearLine();
-    lcd.print(n);
+    if (n%60 == 0){
+      clearLine();
+      lcd.print(n/60);
+      lcd.print("min");
+    }
     delay(1000);
    }
    digitalWrite(MOTOR, LOW);
 }
 
-void add_liquid(int L, int i, int qty){
-
-
-  
-    if (L==1){
-  
-         pulseCount        = 0;
-          flowRate          = 0.0;
-          flowMilliLitres   = 0;
-          totalMilliLitres  = 0;
-          oldTime           = 0;
-          attachInterrupt(sensorInterrupt, pulseCounter, FALLING);
-      
-      
-      display_status("Adc. agua      ", i);
-       digitalWrite(WATER_VALVE, LOW);
-       digitalWrite(PUMP_1, HIGH);
-       digitalWrite(PUMP_2, HIGH);
-
-       measure_water(qty*1000);
-
-       digitalWrite(WATER_VALVE, HIGH);
-       digitalWrite(PUMP_1, HIGH);
-       digitalWrite(PUMP_2, HIGH);
+void rest(int i, int t){
+   display_status("Repousando    ", i);
+   int wait_time = t*60; //em segundos
+   for(int n = 0; n<wait_time; n++){
+    if (n%60 == 0){
+      clearLine();
+      lcd.print(n/60);
+      lcd.print("min");
     }
-    else if (L==2){
-      display_status("Adc. sol. acida", i);
-       digitalWrite(WATER_VALVE, HIGH);
-       digitalWrite(PUMP_1, LOW);
-       digitalWrite(PUMP_2, HIGH);
+    delay(1000);
+   }
+}
 
-       int wait_time = qty/cal_pump1;
-       for(int n = 0; n<wait_time; n++){
+void add_liquid(int L, int i, int qty){
+  if (L==1){
+      pulseCount        = 0;
+      flowRate          = 0.0;
+      flowMilliLitres   = 0;
+      totalMilliLitres  = 0;
+      oldTime           = 0;
+      attachInterrupt(sensorInterrupt, pulseCounter, FALLING);
+          
+      display_status("Adc. agua      ", i);
+    
+      digitalWrite(VALVE_IN, LOW); //ativo em baixo
+      measure_water(qty*1000);
+      digitalWrite(VALVE_IN, HIGH);
+    }
+  else if (L==2){
+      display_status("Adc. sol. 1", i);
+      digitalWrite(PUMP_1, LOW);
+      int wait_time = qty/cal_pump1;
+      for(int n = 0; n<wait_time; n++){
         clearLine();
-        lcd.print(cal_pump1*n);
+        lcd.print(round(cal_pump1*n));
+        lcd.print("mL");
         delay(1000);
        }
-  
-       digitalWrite(WATER_VALVE, HIGH);
-       digitalWrite(PUMP_1, HIGH);
-       digitalWrite(PUMP_2, HIGH);
-    }
-    else if (L==3){
-      display_status("Adc. sol salina", i);
-      digitalWrite(WATER_VALVE, HIGH);
       digitalWrite(PUMP_1, HIGH);
+    }
+  else if (L==3){
+      display_status("Adc. sol 2", i);
       digitalWrite(PUMP_2, LOW);
       int wait_time = qty/cal_pump2;
-       for(int n = 0; n<wait_time; n++){
+      for(int n = 0; n<wait_time; n++){
         clearLine();
-        lcd.print(cal_pump2*n);
+        lcd.print(round(cal_pump1*n));
+        lcd.print("mL");
         delay(1000);
-       }
-  
-
-      digitalWrite(WATER_VALVE, HIGH);
-      digitalWrite(PUMP_1, HIGH);
+      }
       digitalWrite(PUMP_2, HIGH);
     }
+  delay(100);
+}
 
-    delay(100);
+void empty(int i){
+    display_status("Esvaziando    ", i);
+    Rc = 0;
+    digitalWrite(VALVE_OUT, LOW);
+    while (Rc < THRESHOLD){
+      int k=1;
+      buffer=0;
 
+      while(k<=10){
+          digitalWrite(ECPower,HIGH);
+          raw = analogRead(ECPin);
+          raw = analogRead(ECPin);// This is not a mistake, First reading will be low
+          digitalWrite(ECPower,LOW);
+          buffer=buffer+raw;
+          k++;
+          delay(50);
+      };
+      
+      raw=(buffer/10);
+      Vdrop= (((Vin)*(raw))/1024.0);
+      Rc=(Vdrop*R1)/(Vin-Vdrop);
+      Rc=Rc-Ra;
+      lcd.clear();
+      lcd.print(Rc);
+    }
+    digitalWrite(VALVE_OUT, HIGH);
  
 }

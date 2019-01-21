@@ -1,7 +1,6 @@
 #include "settings.h"
 #include <LiquidCrystal.h>
 
-//int adc_key_in  = 0;
 extern LiquidCrystal lcd;
 extern char s;
 
@@ -26,7 +25,6 @@ void clearLine(){
   lcd.print("   ");
   lcd.setCursor(0,1);
 }
-
 
 void printUnit(char s[2]){
   lcd.setCursor(3,1);

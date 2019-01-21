@@ -3,41 +3,89 @@
 #include "initialize.h"
 #include "cycleControl.h"
 
-LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 
+
+// =================== condutivimetro ==============================
+float CalibrationEC=1; //EC value of Calibration solution is s/cm
+int R1= 1000;
+int Ra=25; //Resistance of powering Pins
+int ECPin= A1;
+int ECGround=A2;
+int ECPower =A3;
+float EC=0;
+int ppm =0;
+float raw= 0;
+float Vin= 5;
+float Vdrop= 0;
+float Rc= 0;
+float K=0;
+float buffer=0;
+
+ // ================= LCD + Keypad =================================
+int lcd_key     = 0;
+LiquidCrystal lcd(8, 9, 4, 5, 6, 7); 
+
+// ================ Fluxometro ====================================
 
 byte sensorInterrupt = 0;  // 0 = digital pin 2
 byte sensorPin       = 2;
-
 float calibrationFactor = 8.7;
-float cal_pump1 = 0.6;
-float cal_pump2 = 0.6;
 float flowRate;
 unsigned int flowMilliLitres;
 unsigned long totalMilliLitres;
 unsigned long oldTime;
+volatile byte pulseCount;
+// ===================== Bombas ==================================
+float cal_pump1 = 0.6;
+float cal_pump2 = 0.6;
 
-int lcd_key     = 0;
+// ===================== Valvulas ===============================
 
 
+
+
+// ===================== Ciclos ====================================
 int cycle[NUM_CYCLES * 5];
 
 
 void setup()
 {
- lcd.begin(16, 2);              // start the library
- pinMode(WATER_VALVE, OUTPUT);    
- pinMode(PUMP_1, OUTPUT);    
- pinMode(PUMP_2, OUTPUT); 
- pinMode(MOTOR, OUTPUT);   
- 
- digitalWrite(WATER_VALVE, HIGH);
- digitalWrite(PUMP_1, HIGH);
- digitalWrite(PUMP_2, HIGH);
- digitalWrite(MOTOR, LOW);
- 
- pinMode(sensorPin, INPUT);
- digitalWrite(sensorPin, HIGH);
+ // ==== condutivimetro ===
+      pinMode(ECPin,INPUT);
+      pinMode(ECPower,OUTPUT);//Setting pin for sourcing current
+      pinMode(ECGround,OUTPUT);//setting pin for sinking current
+      digitalWrite(ECGround,LOW);//We can leave the ground connected permanantly
+      R1=(R1+Ra); 
+      
+ // ==== LCD + Keypad =====
+      lcd.begin(16, 2);   
+       
+ // ==== Fluxometro =======
+           pinMode(sensorPin, INPUT);
+      digitalWrite(sensorPin, HIGH );
+      attachInterrupt(sensorInterrupt, pulseCounter, FALLING);
+      
+      pulseCount        = 0;
+      flowRate          = 0.0;
+      flowMilliLitres   = 0;
+      totalMilliLitres  = 0;
+      oldTime           = 0;
+      
+ // ==== Bombas ===========
+           pinMode(PUMP_1, OUTPUT);    
+           pinMode(PUMP_2, OUTPUT); 
+      digitalWrite(PUMP_1, HIGH  );
+      digitalWrite(PUMP_2, HIGH  );
+      
+ // ==== Valvulas =========
+           pinMode(VALVE_IN , OUTPUT);   
+           pinMode(VALVE_OUT, OUTPUT);   
+      digitalWrite(VALVE_IN , HIGH  );  
+      digitalWrite(VALVE_OUT, HIGH  );
+      
+ // ==== Ciclos =========== 
+           pinMode(MOTOR, OUTPUT);   
+      digitalWrite(MOTOR, LOW   );
 
 }
  
@@ -59,8 +107,8 @@ void loop()
       add_liquid(2, i, cycle[j + 1]);
       add_liquid(3, i, cycle[j + 2]);
       mix(i, cycle[j + 3]);
-//      rest(i, cycle[j + 4]);
-      //empty(i);
+      rest(i, cycle[j + 4]);
+      empty(i);
     }
     lcd.clear();
     lcd.print("ENCERRADO");
