@@ -133,9 +133,9 @@ void cycle_set(int *c)
   lcd.setCursor(0, 0);
   for (int i = 0; i < NUM_CYCLES; i++) {
     int j = 5 * i;
-    c[j + 0] = set_cycle_qnt("Qte agua "      , i, "L  ", D_WATER  , MAX_WATER  , MIN_WATER , c[j + 0]);
-    c[j + 1] = set_cycle_qnt("Qte sol. 1 "    , i, "mL ", D_SOL    , MAX_SOL    , MIN_SOL   , c[j + 1]);
-    c[j + 2] = set_cycle_qnt("Qte sol. 2 "    , i, "mL ", D_SOL    , MAX_SOL    , MIN_SOL   , c[j + 2]);;
+    c[j + 0] = set_cycle_qnt("Qte agua "      , i, "  L", D_WATER  , MAX_WATER  , MIN_WATER , c[j + 0]);
+    c[j + 1] = set_cycle_qnt("Qte sol. 1 "    , i, " mL", D_SOL    , MAX_SOL    , MIN_SOL   , c[j + 1]);
+    c[j + 2] = set_cycle_qnt("Qte sol. 2 "    , i, " mL", D_SOL    , MAX_SOL    , MIN_SOL   , c[j + 2]);;
     c[j + 3] = set_cycle_qnt("Tempo mix "     , i, "min", D_TIME   , MAX_TIME   , MIN_TIME  , c[j + 3]);
     c[j + 4] = set_cycle_qnt("Tempo rest "    , i, "min", D_TIME   , MAX_TIME   , MIN_TIME  , c[j + 4]);
     delay(50);
@@ -258,9 +258,15 @@ void empty(int i){
       Vdrop= (((Vin)*(raw))/1024.0);
       Rc=(Vdrop*R1)/(Vin-Vdrop);
       Rc=Rc-Ra;
-      lcd.clear();
+      clearLine();
       lcd.print(Rc);
     }
     digitalWrite(VALVE_OUT, HIGH);
  
 }
+
+void force_empty(){
+  digitalWrite(VALVE_OUT, LOW);
+  while(true){}
+  
+  }

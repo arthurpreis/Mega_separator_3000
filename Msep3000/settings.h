@@ -20,8 +20,8 @@
 #define VALVE_OUT 3
 
 // ===================== Ciclos ==================================
-#define MAX_WATER 10
-#define MAX_SOL 100
+#define MAX_WATER 30
+#define MAX_SOL 500
 #define MAX_TIME 600
 
 #define MIN_WATER 0
@@ -30,7 +30,7 @@
 
 #define D_WATER 1
 #define D_SOL 1
-#define D_TIME 1
+#define D_TIME 5
 
 #define NUM_CYCLES 3
 

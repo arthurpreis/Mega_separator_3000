@@ -7,13 +7,13 @@
 
 // =================== condutivimetro ==============================
 float CalibrationEC=1; //EC value of Calibration solution is s/cm
-int R1= 1000;
-int Ra=25; //Resistance of powering Pins
+int R1 = 1000;
+int Ra = 25; //Resistance of powering Pins
 int ECPin= A1;
 int ECGround=A2;
 int ECPower =A3;
-float EC=0;
-int ppm =0;
+float EC = 0;
+int ppm = 0;
 float raw= 0;
 float Vin= 5;
 float Vdrop= 0;
@@ -26,7 +26,6 @@ int lcd_key     = 0;
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7); 
 
 // ================ Fluxometro ====================================
-
 byte sensorInterrupt = 0;  // 0 = digital pin 2
 byte sensorPin       = 2;
 float calibrationFactor = 8.7;
@@ -35,6 +34,7 @@ unsigned int flowMilliLitres;
 unsigned long totalMilliLitres;
 unsigned long oldTime;
 volatile byte pulseCount;
+
 // ===================== Bombas ==================================
 float cal_pump1 = 0.6;
 float cal_pump2 = 0.6;
@@ -42,12 +42,10 @@ float cal_pump2 = 0.6;
 // ===================== Valvulas ===============================
 
 
-
-
 // ===================== Ciclos ====================================
 int cycle[NUM_CYCLES * 5];
 
-
+//***___***___***___***___SETUP___***___***___***___***
 void setup()
 {
  // ==== condutivimetro ===
@@ -87,6 +85,11 @@ void setup()
            pinMode(MOTOR, OUTPUT);   
       digitalWrite(MOTOR, LOW   );
 
+ // Bypass para esvaziar
+ lcd_key = read_LCD_buttons();
+ if(lcd_key == btnRIGHT){
+      force_empty(); 
+ }
 }
  
 void loop()
